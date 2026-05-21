@@ -7,8 +7,8 @@
 // =========================================================================
 // 1. extern "C" — declare a C function
 // =========================================================================
-extern "C" {
-    /// C standard library strlen (from <string.h>)
+unsafe extern "C" {
+    /// C standard library strlen (from string.h)
     fn strlen(s: *const u8) -> usize;
 }
 
@@ -18,13 +18,13 @@ extern "C" {
 fn call_c_strlen() {
     let text = b"hello\0"; // null-terminated — required by C
     let len = unsafe { strlen(text.as_ptr()) };
-    unsafe { println!("  strlen(\"hello\") = {} (via C strlen)", len) };
+    println!("  strlen(\"hello\") = {} (via C strlen)", len);
 }
 
 // =========================================================================
-// 3. Exporting Rust to C — #[no_mangle] + extern "C"
+// 3. Exporting Rust to C — #[unsafe(no_mangle)] + extern "C"
 // =========================================================================
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn add(a: i32, b: i32) -> i32 {
     a + b
 }
@@ -42,7 +42,7 @@ unsafe extern "C" fn rust_callback(n: i32) -> i32 {
 fn callback_demo() {
     let cb: CCallback = rust_callback;
     let result = unsafe { cb(7) };
-    unsafe { println!("  callback result = {} (via Rust fn pointer)", result) };
+    println!("  callback result = {} (via Rust fn pointer)", result);
 }
 
 // =========================================================================
@@ -53,28 +53,28 @@ use std::ffi::{CStr, CString};
 fn cstring_demo() {
     // Rust String → C string (null-terminated)
     let cs = CString::new("hello from CString").expect("no null bytes");
-    unsafe { println!("  CString: {:?}", CStr::from_ptr(cs.as_ptr())) };
+    println!("  CString: {:?}", unsafe { CStr::from_ptr(cs.as_ptr()) });
 
     // C string → Rust &CStr
     let raw = b"world\0";
     let cstr = unsafe { CStr::from_ptr(raw.as_ptr() as *const i8) };
-    unsafe { println!("  &CStr: {:?}", cstr) };
+    println!("  &CStr: {:?}", cstr);
 }
 
 // =========================================================================
-// 6. libloading — dynamic library at run time
+// 6. Dynamic loading (libloading) — not on all platforms
 // =========================================================================
-fn dynamic_lib_demo() {
+fn dynamic_lib_demo() -> Result<(), String> {
     use libloading::{Library, Symbol};
-    // Load msvcrt (Windows) or libc.so.6 (Linux) at run time
-    let lib = unsafe { Library::new("msvcrt.dll") }.expect("load msvcrt");
+    let lib = unsafe { Library::new("msvcrt.dll") }.map_err(|e| e.to_string())?;
     unsafe {
-        // strlen is a real symbol we can look up
         let strlen: Symbol<unsafe extern "C" fn(*const u8) -> usize> =
-            lib.get(b"strlen\0").expect("sym strlen not found");
+            lib.get(b"strlen\0").map_err(|e| e.to_string())?;
         let s = b"dynlib\0";
         println!("  dynlib strlen = {}", strlen(s.as_ptr()));
+        drop(lib); // explicit unload
     }
+    Ok(())
 }
 
 // =========================================================================
@@ -85,27 +85,25 @@ pub struct RustOpaque {
     value: i32,
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn opaque_create(v: i32) -> *mut RustOpaque {
     Box::into_raw(Box::new(RustOpaque { value: v }))
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn opaque_get(ptr: *mut RustOpaque) -> i32 {
     unsafe { (*ptr).value }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn opaque_free(ptr: *mut RustOpaque) {
     unsafe { drop(Box::from_raw(ptr)) }
 }
 
 fn opaque_demo() {
-    unsafe {
-        let p = opaque_create(42);
-        println!("  opaque value = {}", opaque_get(p));
-        opaque_free(p);
-    }
+    let p = opaque_create(42);
+    println!("  opaque value = {}", opaque_get(p));
+    unsafe { opaque_free(p) };
 }
 
 // =========================================================================
@@ -121,7 +119,7 @@ fn safety_rules() {
          No data races     │ &mut T *never* crosses FFI boundary\n\
          ABI must match    │ use #[repr(C)] on every shared struct\n\
          No exceptions     │ Rust has none — C's setjmp/longjmp are UB\n\
-         No double-free    │ {free, Box::from_raw} called exactly once"
+         No double-free    │ {{free, Box::from_raw}} called exactly once"
     );
 }
 

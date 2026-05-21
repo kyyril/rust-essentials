@@ -40,3 +40,8 @@ cargo test
 | 9 | Error Handling | ✅ |
 | 10 | OOP in Rust (Traits, Composition, Encapsulation) | ✅ |
 | 11 | Smart Pointers (Box, Rc, Arc, RefCell, Mutex) | ✅ |
+| 12 | Concurrency (threads, channels, shared state) | ✅ |
+| 13 | Macros (declarative, procedural) | ✅ |
+| 14 | Async / Await (futures, tokio, select!) | ✅ |
+| 15 | FFI (Foreign Function Interface) | ✅ |
+| 16 | Testing (unit, integration, doctests, proptest) | ✅ |
