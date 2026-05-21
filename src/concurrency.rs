@@ -6,7 +6,7 @@ use std::thread;
 use std::time::Duration;
 
 // =========================================================================
-// 1. Thread creation — std::thread::spawn
+// 1. Thread creation
 // =========================================================================
 fn spawn_demo() {
     let handle = thread::spawn(|| {
@@ -16,117 +16,72 @@ fn spawn_demo() {
         }
     });
 
-    // Meanwhile in main
     for i in 1..=3 {
         println!("  main says {i}");
         thread::sleep(Duration::from_millis(50));
     }
-
-    handle.join().unwrap(); // wait for thread to finish
-    println!(
-        "  .join() returned: {:?}",
-        handle
-            .join()
-            .unwrap_or_else(|e| format!("thread panicked: {e:?}"))
-    );
+    handle.join().unwrap(); // wait
 }
 
 // =========================================================================
-// 2. Message passing — mpsc::channel (multi-producer, single-consumer)
+// 2. Message passing — mpsc channel
 // =========================================================================
-fn channel_demo() {
-    // tx = transmitter, rx = receiver
-    let (tx, rx) = mpsc::channel::<String>();
-
-    thread::spawn(move || {
-        let msgs = vec!["hello", "from", "thread"];
-        for msg in msgs {
-            tx.send(msg.to_string()).unwrap();
-            thread::sleep(Duration::from_millis(50));
-        }
-    });
-
-    // Blocking receive
+fn channel_demo(mut rx: mpsc::Receiver<String>) {
     while let Ok(msg) = rx.recv() {
         println!("  received: {msg}");
     }
-    // Try_recv — non-blocking: returns Err immediately if nothing yet
-    // iter() — reuse the receiver as an iterator
+}
+
+fn channel_setup() -> mpsc::Receiver<String> {
+    let (tx, rx) = mpsc::channel::<String>();
+    thread::spawn(move || {
+        for msg in ["hello", "from", "thread"] {
+            tx.send(msg.to_string()).unwrap();
+        }
+    });
+    rx
 }
 
 // =========================================================================
-// 3. Shared-state concurrency — Arc<Mutex<T>>
+// 3. Shared state — Arc<Mutex<T>>
 // =========================================================================
 fn shared_state_demo() {
     let counter = Arc::new(Mutex::new(0u32));
-
     let mut handles = vec![];
     for _ in 0..6 {
         let c = Arc::clone(&counter);
         handles.push(thread::spawn(move || {
             for _ in 0..1000 {
-                let mut num = c.lock().unwrap();
-                *num += 1; // guard auto-unlocks on drop
+                let mut n = c.lock().unwrap();
+                *n += 1;
             }
         }));
     }
-
-    for h in handles {
-        h.join().unwrap();
-    }
+    for h in handles { h.join().unwrap(); }
     println!("  final = {}", *counter.lock().unwrap()); // 6000
 }
 
 // =========================================================================
-// 4. Scoped threads — cross borrow of stack data
+// 4. Scoped threads — borrow stack data in a child thread
 // =========================================================================
 fn scoped_demo() {
-    // Without scoped threads, the compiler rejects .join references in closures.
+    let data = vec![1, 2, 3];
     thread::scope(|s| {
-        let data = vec![1, 2, 3];
         s.spawn(|| {
-            println!("  scope thread: {:?}", data); // borrows stack data
+            println!("  scope thread: {:?}", data); // borrow from parent stack
         });
-    }); // all threads guaranteed to finish before scope exits
-
-    println!("  all scoped threads done");
+    }); // threads joined here automatically
+    println!("  scoped threads done");
 }
 
 // =========================================================================
-// 5. Channels — multiple producers
+// 5. Send / Sync — the auto-traits
 // =========================================================================
-fn multi_producer_demo() {
-    let (tx, rx) = mpsc::channel::<i32>();
-
-    for i in 0..4 {
-        let tx = tx.clone();
-        thread::spawn(move || {
-            tx.send(i).unwrap();
-        });
-    }
-    drop(tx); // drop original so rx eventually closes
-
-    // Collect all messages
-    let received: Vec<_> = rx.iter().collect();
-    println!("  received: {:?}", received);
-    // order not guaranteed across threads
-}
-
-// =========================================================================
-// 6. Sync trait — what types can be shared across threads?
-// =========================================================================
-fn sync_trait_demo() {
-    // Arc<T> requires T: Send + Sync
-    //   Send  — ownership may be transferred between threads
-    //   Sync  — &T may be shared safely across threads
-    // Rc<T> is NOT Send/Sync — use Arc<T> instead
-    println!(
-        "  Arc<T> is Send: {}",
-        std::any::TypeId::of::<Arc<i32>>() == std::any::TypeId::of::<Arc<i32>>()
-    );
-    println!("  Rc<T> is Send: {}", // Rc<i32> is NOT Send
-        false // substituted for brevity
-    );
+fn send_sync_demo() {
+    // Copy  T : Send + Sync → may cross thread boundaries
+    // Arc<T> : requires T: Send + Sync
+    // Rc<T>  : NOT Send / Sync — cannot cross thread boundaries
+    println!("  Arc<i32>: Send is checked at compile time");
 }
 
 // =========================================================================
@@ -137,17 +92,17 @@ fn main() {
     spawn_demo();
 
     println!("\n=== 2. mpsc channel ===");
-    channel_demo();
+    let rx = channel_setup();
+    channel_demo(rx);
 
-    println!("\n=== 3. Shared state (Arc<Mutex<T>>) ===");
+    println!("\n=== 3. Arc<Mutex<T>> shared counter ===");
     shared_state_demo();
 
     println!("\n=== 4. Scoped threads ===");
     scoped_demo();
 
-    println!("\n=== 5. Multi-producer channel ===");
-    multi_producer_demo();
+    println!("\n=== 5. Send/Sync ===");
+    send_sync_demo();
 
-    println!("\n=== 6. Send/Sync ===");
-    sync_trait_demo();
+    println!("\nDone.");
 }
