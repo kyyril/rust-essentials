@@ -43,7 +43,7 @@ fn main() {
 
     // labelled loops (break outer from nested)
     'outer: for item in 1..3 {
-        'inner: for j in 1..4 {
+        for j in 1..4 {
             if j == 2 {
                 break 'outer; // exits the outer loop
             }
@@ -93,7 +93,7 @@ fn main() {
     println!("coin = {c}");
 
     // Match on booleans
-    let status = match (6 % 2 == 0) {
+    let status = match 6 % 2 == 0 {
         true => "even match",
         false => "odd match",
     };

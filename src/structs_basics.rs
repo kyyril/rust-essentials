@@ -66,9 +66,10 @@ fn main() {
     println!("updated email: {}", user.email);
 
     // ---------- struct update syntax ----------
+    let another_user = User::new("alice", "alice@newdomain.com");
     let user2 = User {
         email: String::from("bob@example.com"),
-        ..user2 // copy remaining fields from another instance
+        ..another_user // copy remaining fields from another instance
     };
 
     // ---------- tuple struct ----------

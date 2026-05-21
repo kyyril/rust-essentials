@@ -1,6 +1,8 @@
 // Topic 8: Enums and Pattern Matching
 // Run with: cargo run --bin enums_patterns
 
+use std::option::Option::{self, Some, None}; // std::option::Option + variants
+
 // =========================================================================
 // Enums — a type that can be ONE OF several variants
 // =========================================================================
@@ -23,22 +25,6 @@ impl Message {
             }
         }
     }
-}
-
-// =========================================================================
-// Option<T> — safe null handling (in std::option::Option)
-// =========================================================================
-enum Option<T> {
-    Some(T),
-    None,
-}
-
-// =========================================================================
-// Result<T, E> — error handling (in std::result::Result)
-// =========================================================================
-enum Result<T, E> {
-    Ok(T),
-    Err(E),
 }
 
 // =========================================================================
