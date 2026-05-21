@@ -39,3 +39,4 @@ cargo test
 | 8 | Enums and Pattern Matching | ✅ |
 | 9 | Error Handling | ✅ |
 | 10 | OOP in Rust (Traits, Composition, Encapsulation) | ✅ |
+| 11 | Smart Pointers (Box, Rc, Arc, RefCell, Mutex) | ✅ |

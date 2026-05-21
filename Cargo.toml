@@ -45,6 +45,10 @@ path = "src/error_handling.rs"
 name = "oop"
 path = "src/oop.rs"
 
+[[bin]]
+name = "smart_pointers"
+path = "src/smart_pointers.rs"
+
 [profile.dev]
 opt-level = 0
 
