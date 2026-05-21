@@ -41,6 +41,10 @@ path = "src/enums_patterns.rs"
 name = "error_handling"
 path = "src/error_handling.rs"
 
+[[bin]]
+name = "oop"
+path = "src/oop.rs"
+
 [profile.dev]
 opt-level = 0
 

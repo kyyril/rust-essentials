@@ -38,3 +38,4 @@ cargo test
 | 7 | Structs | ✅ |
 | 8 | Enums and Pattern Matching | ✅ |
 | 9 | Error Handling | ✅ |
+| 10 | OOP in Rust (Traits, Composition, Encapsulation) | ✅ |
