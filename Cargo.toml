@@ -1,0 +1,48 @@
+[package]
+name = "rust_essentials"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+
+[[bin]]
+name = "variables_and_mutability"
+path = "src/variables_and_mutability.rs"
+
+[[bin]]
+name = "data_types"
+path = "src/data_types.rs"
+
+[[bin]]
+name = "functions_basics"
+path = "src/functions_basics.rs"
+
+[[bin]]
+name = "control_flow"
+path = "src/control_flow.rs"
+
+[[bin]]
+name = "ownership"
+path = "src/ownership.rs"
+
+[[bin]]
+name = "borrowing_references"
+path = "src/borrowing_references.rs"
+
+[[bin]]
+name = "structs_basics"
+path = "src/structs_basics.rs"
+
+[[bin]]
+name = "enums_patterns"
+path = "src/enums_patterns.rs"
+
+[[bin]]
+name = "error_handling"
+path = "src/error_handling.rs"
+
+[profile.dev]
+opt-level = 0
+
+[profile.release]
+opt-level = 3
